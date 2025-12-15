@@ -40,11 +40,19 @@ export async function GET(
             ip_address: ip
         })
 
-        // Redirect to LIFF page with taxi code
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin
-        const liffUrl = `${baseUrl}/liff?taxi=${taxiCode}`
+        // Get LIFF ID
+        const liffId = process.env.NEXT_PUBLIC_LIFF_ID
 
-        return NextResponse.redirect(liffUrl)
+        if (liffId) {
+            // Redirect to LIFF URL directly - this opens in LINE app!
+            const liffUrl = `https://liff.line.me/${liffId}?taxi=${taxiCode}`
+            return NextResponse.redirect(liffUrl)
+        } else {
+            // Fallback to regular LIFF page
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin
+            const liffUrl = `${baseUrl}/liff?taxi=${taxiCode}`
+            return NextResponse.redirect(liffUrl)
+        }
     } catch (error) {
         console.error('QR Redirect Error:', error)
         return NextResponse.json(

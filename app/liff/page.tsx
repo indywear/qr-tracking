@@ -24,11 +24,22 @@ export default function LiffPage() {
             // Initialize LIFF
             await liff.init({ liffId })
 
-            // Check if user is logged in
-            if (!liff.isLoggedIn()) {
-                liff.login({ redirectUri: window.location.href })
+            // Check if running in LINE app
+            const isInClient = liff.isInClient()
+
+            // If in LINE app, user is automatically logged in
+            // If in external browser, need to check login status
+            if (!isInClient && !liff.isLoggedIn()) {
+                // Store taxi code before redirect
+                if (taxiCode) {
+                    sessionStorage.setItem('taxiCode', taxiCode)
+                }
+                liff.login()
                 return
             }
+
+            // Get taxi code from session storage if redirected
+            const storedTaxiCode = sessionStorage.getItem('taxiCode') || taxiCode
 
             // Get user profile
             const profile = await liff.getProfile()
@@ -43,9 +54,12 @@ export default function LiffPage() {
                     lineUserId: profile.userId,
                     displayName: profile.displayName,
                     pictureUrl: profile.pictureUrl,
-                    taxiCode: taxiCode
+                    taxiCode: storedTaxiCode
                 })
             })
+
+            // Clear stored taxi code
+            sessionStorage.removeItem('taxiCode')
 
             if (!response.ok) {
                 throw new Error('Failed to register')
@@ -56,16 +70,23 @@ export default function LiffPage() {
 
             // Redirect to LINE OA chat
             const lineOaId = process.env.NEXT_PUBLIC_LINE_OA_ID || ''
-            const lineOaUrl = `https://line.me/R/ti/p/${lineOaId}`
 
-            // Small delay before redirect
             setTimeout(() => {
-                if (liff.isInClient()) {
-                    // In LINE app, open chat directly
-                    liff.openWindow({ url: lineOaUrl, external: false })
+                if (lineOaId) {
+                    const lineOaUrl = `https://line.me/R/ti/p/${lineOaId}`
+                    if (liff.isInClient()) {
+                        // In LINE app, open chat directly
+                        liff.openWindow({ url: lineOaUrl, external: false })
+                    } else {
+                        // In external browser, redirect
+                        window.location.href = lineOaUrl
+                    }
                 } else {
-                    // In external browser, redirect
-                    window.location.href = lineOaUrl
+                    // No LINE OA configured, just close LIFF
+                    setMessage('บันทึกข้อมูลเรียบร้อย!')
+                    if (liff.isInClient()) {
+                        liff.closeWindow()
+                    }
                 }
             }, 1500)
 
