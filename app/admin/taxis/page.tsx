@@ -93,21 +93,91 @@ export default function TaxisPage() {
         }
     }
 
-    const downloadQR = async (taxiCode: string) => {
+    const downloadQR = async (taxiCode: string, plateNumber: string | null) => {
         const baseUrl = window.location.origin
         const qrUrl = `${baseUrl}/t/${taxiCode}`
 
         try {
-            const dataUrl = await QRCode.toDataURL(qrUrl, {
-                width: 400,
-                margin: 2,
-                color: { dark: '#000000', light: '#ffffff' }
+            // Generate QR code as data URL
+            const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+                width: 280,
+                margin: 0,
+                color: { dark: '#000000', light: '#ffffff' },
+                errorCorrectionLevel: 'M'
             })
 
-            const link = document.createElement('a')
-            link.download = `QR-${taxiCode}.png`
-            link.href = dataUrl
-            link.click()
+            // Create canvas for styled QR
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')!
+
+            // Canvas size
+            const width = 400
+            const height = 520
+            canvas.width = width
+            canvas.height = height
+
+            // Background
+            ctx.fillStyle = '#ffffff'
+            ctx.fillRect(0, 0, width, height)
+
+            // Header gradient
+            const gradient = ctx.createLinearGradient(0, 0, width, 0)
+            gradient.addColorStop(0, '#06C755')
+            gradient.addColorStop(1, '#00B900')
+            ctx.fillStyle = gradient
+            ctx.beginPath()
+            ctx.roundRect(0, 0, width, 80, [20, 20, 0, 0])
+            ctx.fill()
+
+            // Header text
+            ctx.fillStyle = '#ffffff'
+            ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, sans-serif'
+            ctx.textAlign = 'center'
+            ctx.fillText('📱 แสกนด้วยแอพ LINE', width / 2, 50)
+
+            // QR Code container (rounded white box)
+            ctx.fillStyle = '#f8f9fa'
+            ctx.beginPath()
+            ctx.roundRect(40, 100, 320, 320, 16)
+            ctx.fill()
+
+            // QR Code border
+            ctx.strokeStyle = '#e9ecef'
+            ctx.lineWidth = 2
+            ctx.beginPath()
+            ctx.roundRect(40, 100, 320, 320, 16)
+            ctx.stroke()
+
+            // Load and draw QR code
+            const qrImage = new Image()
+            qrImage.onload = () => {
+                ctx.drawImage(qrImage, 60, 120, 280, 280)
+
+                // Taxi Code
+                ctx.fillStyle = '#333333'
+                ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, sans-serif'
+                ctx.textAlign = 'center'
+                ctx.fillText(taxiCode, width / 2, 460)
+
+                // Plate number (if available)
+                if (plateNumber) {
+                    ctx.fillStyle = '#666666'
+                    ctx.font = '18px -apple-system, BlinkMacSystemFont, sans-serif'
+                    ctx.fillText(`ทะเบียน: ${plateNumber}`, width / 2, 490)
+                }
+
+                // Footer
+                ctx.fillStyle = '#999999'
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif'
+                ctx.fillText('เปิด LINE → แตะ 🔍 → แตะ 📷 แสกน', width / 2, 515)
+
+                // Download
+                const link = document.createElement('a')
+                link.download = `QR-${taxiCode}.png`
+                link.href = canvas.toDataURL('image/png')
+                link.click()
+            }
+            qrImage.src = qrDataUrl
         } catch (error) {
             console.error('Failed to generate QR:', error)
         }
@@ -188,7 +258,7 @@ export default function TaxisPage() {
                                     </td>
                                     <td style={styles.td}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button onClick={() => downloadQR(taxi.taxi_code)} style={{ ...styles.btn, ...styles.btnSecondary, padding: '6px 12px', fontSize: '13px' }}>📥 QR</button>
+                                            <button onClick={() => downloadQR(taxi.taxi_code, taxi.plate_number)} style={{ ...styles.btn, ...styles.btnSecondary, padding: '6px 12px', fontSize: '13px' }}>📥 QR</button>
                                             <button onClick={() => openEdit(taxi)} style={{ ...styles.btn, ...styles.btnSecondary, padding: '6px 12px', fontSize: '13px' }}>✏️</button>
                                             <button onClick={() => handleToggleActive(taxi)} style={{ ...styles.btn, ...styles.btnSecondary, padding: '6px 12px', fontSize: '13px' }}>{taxi.is_active ? '🚫' : '✅'}</button>
                                             <button onClick={() => handleDelete(taxi.id)} style={{ ...styles.btn, ...styles.btnSecondary, padding: '6px 12px', fontSize: '13px', color: '#ef4444' }}>🗑️</button>
