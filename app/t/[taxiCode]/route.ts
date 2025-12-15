@@ -40,16 +40,23 @@ export async function GET(
             ip_address: ip
         })
 
+        // Check if iOS
+        const isIOS = /iPhone|iPad|iPod/i.test(userAgent)
+
         // Get LIFF ID
         const liffId = process.env.NEXT_PUBLIC_LIFF_ID
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin
 
-        if (liffId) {
-            // Redirect to LIFF URL directly - this opens in LINE app!
+        if (isIOS && liffId) {
+            // iOS: Redirect to our intermediate page that tries to open LINE app
+            const openUrl = `${baseUrl}/open?taxi=${taxiCode}`
+            return NextResponse.redirect(openUrl)
+        } else if (liffId) {
+            // Android/Other: Redirect to LIFF URL directly
             const liffUrl = `https://liff.line.me/${liffId}?taxi=${taxiCode}`
             return NextResponse.redirect(liffUrl)
         } else {
             // Fallback to regular LIFF page
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin
             const liffUrl = `${baseUrl}/liff?taxi=${taxiCode}`
             return NextResponse.redirect(liffUrl)
         }
