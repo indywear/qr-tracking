@@ -98,78 +98,44 @@ export default function TaxisPage() {
         const qrUrl = `${baseUrl}/t/${taxiCode}`
 
         try {
-            // Generate QR code as data URL
+            // Generate QR code with high error correction for center logo
             const qrDataUrl = await QRCode.toDataURL(qrUrl, {
-                width: 280,
-                margin: 0,
+                width: 400,
+                margin: 2,
                 color: { dark: '#000000', light: '#ffffff' },
-                errorCorrectionLevel: 'M'
+                errorCorrectionLevel: 'H'
             })
 
-            // Create canvas for styled QR
+            // Create canvas
             const canvas = document.createElement('canvas')
             const ctx = canvas.getContext('2d')!
-
-            // Canvas size
-            const width = 400
-            const height = 520
-            canvas.width = width
-            canvas.height = height
-
-            // Background
-            ctx.fillStyle = '#ffffff'
-            ctx.fillRect(0, 0, width, height)
-
-            // Header gradient
-            const gradient = ctx.createLinearGradient(0, 0, width, 0)
-            gradient.addColorStop(0, '#06C755')
-            gradient.addColorStop(1, '#00B900')
-            ctx.fillStyle = gradient
-            ctx.beginPath()
-            ctx.roundRect(0, 0, width, 80, [20, 20, 0, 0])
-            ctx.fill()
-
-            // Header text
-            ctx.fillStyle = '#ffffff'
-            ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, sans-serif'
-            ctx.textAlign = 'center'
-            ctx.fillText('📱 แสกนด้วยแอพ LINE', width / 2, 50)
-
-            // QR Code container (rounded white box)
-            ctx.fillStyle = '#f8f9fa'
-            ctx.beginPath()
-            ctx.roundRect(40, 100, 320, 320, 16)
-            ctx.fill()
-
-            // QR Code border
-            ctx.strokeStyle = '#e9ecef'
-            ctx.lineWidth = 2
-            ctx.beginPath()
-            ctx.roundRect(40, 100, 320, 320, 16)
-            ctx.stroke()
+            canvas.width = 400
+            canvas.height = 400
 
             // Load and draw QR code
             const qrImage = new Image()
             qrImage.onload = () => {
-                ctx.drawImage(qrImage, 60, 120, 280, 280)
+                ctx.drawImage(qrImage, 0, 0, 400, 400)
 
-                // Taxi Code
-                ctx.fillStyle = '#333333'
-                ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, sans-serif'
+                // White circle in center for taxi code
+                const centerX = 200
+                const centerY = 200
+                const radius = 40
+
+                ctx.beginPath()
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
+                ctx.fillStyle = '#ffffff'
+                ctx.fill()
+                ctx.strokeStyle = '#000000'
+                ctx.lineWidth = 2
+                ctx.stroke()
+
+                // Taxi code text in center
+                ctx.fillStyle = '#000000'
+                ctx.font = 'bold 14px Arial, sans-serif'
                 ctx.textAlign = 'center'
-                ctx.fillText(taxiCode, width / 2, 460)
-
-                // Plate number (if available)
-                if (plateNumber) {
-                    ctx.fillStyle = '#666666'
-                    ctx.font = '18px -apple-system, BlinkMacSystemFont, sans-serif'
-                    ctx.fillText(`ทะเบียน: ${plateNumber}`, width / 2, 490)
-                }
-
-                // Footer
-                ctx.fillStyle = '#999999'
-                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif'
-                ctx.fillText('เปิด LINE → แตะ 🔍 → แตะ 📷 แสกน', width / 2, 515)
+                ctx.textBaseline = 'middle'
+                ctx.fillText(taxiCode, centerX, centerY)
 
                 // Download
                 const link = document.createElement('a')
