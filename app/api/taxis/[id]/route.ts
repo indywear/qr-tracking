@@ -76,6 +76,19 @@ export async function DELETE(
     try {
         const { id } = await params
 
+        // 1. Delete all scans related to this taxi first
+        await supabase
+            .from('scans')
+            .delete()
+            .eq('taxi_id', id)
+
+        // 2. Update customers who have this taxi as first_taxi_id (set to null)
+        await supabase
+            .from('customers')
+            .update({ first_taxi_id: null })
+            .eq('first_taxi_id', id)
+
+        // 3. Now delete the taxi
         const { error } = await supabase
             .from('taxis')
             .delete()
